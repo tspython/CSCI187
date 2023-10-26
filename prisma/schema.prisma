@@ -9,3 +9,27 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id          Int          @id @default(autoincrement())
+  email       String       @unique
+  preferences Preferences?
+}
+
+model Preferences {
+  id            Int    @id @default(autoincrement())
+  budget        Int
+  safetyPriority Int
+  speedPriority  Int
+  userId        Int
+  user          User  @relation(fields: [userId], references: [id])
+}
+
+model Route {
+  id             Int     @id @default(autoincrement())
+  start          String
+  end            String
+  cost           Int
+  estimatedTime  DateTime
+  details        String
+}
