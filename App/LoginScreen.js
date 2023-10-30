@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
-import AsyncStorage from '@react-native-community/async-storage';
+//import AsyncStorage from '@react-native-community/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 const LoginScreen = () => {
@@ -23,7 +23,7 @@ const LoginScreen = () => {
       });
 
       const token = response.data.token; // Assuming the server returns a token
-      await AsyncStorage.setItem('authToken', token); // Save token for future authentication
+     // await AsyncStorage.setItem('authToken', token); // Save token for future authentication
 
       navigation.navigate('Dashboard'); // Navigate to the Dashboard screen
     } catch (error) {

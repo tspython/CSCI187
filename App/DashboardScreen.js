@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import axios from 'axios';
-import AsyncStorage from '@react-native-community/async-storage';
+//import AsyncStorage from '@react-native-community/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 const DashboardScreen = () => {
@@ -11,7 +11,7 @@ const DashboardScreen = () => {
 
   useEffect(() => {
     const checkToken = async () => {
-      const token = await AsyncStorage.getItem('authToken');
+      //const token = await AsyncStorage.getItem('authToken');
       if (!token) {
         navigation.navigate('Login');
       } else {
@@ -33,7 +33,7 @@ const DashboardScreen = () => {
   }, [navigation]);
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('authToken');
+    //await AsyncStorage.removeItem('authToken');
     navigation.navigate('Login');
   };
 
