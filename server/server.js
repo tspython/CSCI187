@@ -6,6 +6,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
 const { PrismaClient } = require('@prisma/client');
+const cors = require('cors');
 
 const prisma = new PrismaClient();
 const app = express();
@@ -15,6 +16,8 @@ const SECRET = '2c06c934f5f3047e4366794f2b89cfe0f7b6a93d708f502d69a09fbfd3451f5e
 // Middleware to parse JSON requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(cors());
 
 passport.use(new JwtStrategy({
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -94,3 +97,4 @@ app.get('/dashboard', passport.authenticate('jwt', { session: false }), (req, re
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
