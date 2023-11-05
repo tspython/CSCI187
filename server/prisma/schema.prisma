@@ -23,6 +23,13 @@ model User {
   preferences Preferences?
 }
 
+model UberUser {
+  id          Int          @id @default(autoincrement())
+  uberId      String       @unique
+  uberAccessToken    String         
+  uberRefreshToken    String
+}
+
 model Preferences {
   id            Int    @id @default(autoincrement())
   budget        Int
