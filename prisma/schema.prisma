@@ -22,7 +22,7 @@ model Preferences {
   budget        Int
   safetyPriority Int
   speedPriority  Int
-  userId        Int
+  userId        Int   @unique
   user          User  @relation(fields: [userId], references: [id])
 }
 
