@@ -16,7 +16,8 @@
     "express-session": "^1.17.3",
     "jsonwebtoken": "^9.0.2",
     "passport": "^0.6.0",
-    "passport-jwt": "^4.0.1"
+    "passport-jwt": "^4.0.1",
+    "passport-oauth2": "^1.7.0"
   },
   "devDependencies": {
     "prisma": "^5.5.2"

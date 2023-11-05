@@ -1,5 +1,6 @@
 const express = require('express');
 const passport = require('passport');
+const passportOAuth2 = require('passport-oauth2');
 const jwt = require('jsonwebtoken');
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
@@ -93,6 +94,34 @@ function ensureAuthenticated(req, res, next) {
 app.get('/dashboard', passport.authenticate('jwt', { session: false }), (req, res) => {
   res.json({ message: 'Welcome to your dashboard!', email: req.user.email });
 });
+
+// UBER
+passport.use('uber', new passportOAuth2.Strategy({
+  authorizationURL: 'https://login.uber.com/oauth/v2/authorize',
+  tokenURL: 'https://login.uber.com/oauth/v2/token',
+  clientID: 'YOUR_CLIENT_ID',
+  clientSecret: 'YOUR_CLIENT_SECRET',
+  callbackURL: 'http://your-callback-url.com/auth/uber/callback', // Update this URL
+}, async (accessToken, refreshToken, profile, done) => {
+  // Here, you can handle the user data received from Uber
+  // You can save the user data to your database or use it as needed
+  // For example, you can create a new user in your database or find an existing user based on the profile data.
+
+  // In the end, call done(null, user) to indicate successful authentication.
+
+  // Example:
+  // const user = await findOrCreateUser(profile);
+  // done(null, user);
+}));
+
+app.get('/user/uber', passport.authenticate('uber'));
+
+app.get('auth/uber/callback',
+        passport.authenticate('uber', { faiureRedirect: '/login' }),
+        (req, res) => {
+          res.redirect('/dashbaord');
+        }
+       );
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
