@@ -9,6 +9,9 @@ const session = require('express-session');
 const { PrismaClient } = require('@prisma/client');
 const cors = require('cors');
 
+//custom modules
+const uber = require('./uber');
+
 const prisma = new PrismaClient();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -91,8 +94,16 @@ function ensureAuthenticated(req, res, next) {
   })(req, res, next);
 }
 
-app.get('/dashboard', passport.authenticate('jwt', { session: false }), (req, res) => {
-  res.json({ message: 'Welcome to your dashboard!', email: req.user.email });
+app.get('/dashboard', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const uberAccessToken = req.user.uberAccessToken; // Assuming you have stored the Uber access token during authentication
+    const rideInfo = await uber.getCurrentRide(uberAccessToken);
+    const estimatedTimeRemaining = rideInfo.eta; // Modify this based on the actual structure of the Uber API response
+    res.json({ message: 'Welcome to your dashboard!', email: req.user.email, remainingTime: estimatedTimeRemaining });
+  }
+  catch (error) {
+    res.status(500).send('Error fetching ride information from Uber API');
+  }
 });
 
 // UBER
