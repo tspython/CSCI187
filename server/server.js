@@ -114,16 +114,50 @@ passport.use('uber', new passportOAuth2.Strategy({
   clientSecret: 'YOUR_CLIENT_SECRET',
   callbackURL: 'http://your-callback-url.com/auth/uber/callback', // Update this URL
 }, async (accessToken, refreshToken, profile, done) => {
-  // Here, you can handle the user data received from Uber
-  // You can save the user data to your database or use it as needed
-  // For example, you can create a new user in your database or find an existing user based on the profile data.
+  try {
+    // Assuming the profile contains an identifier such as 'id'
+    const uberId = profile.id;
 
-  // In the end, call done(null, user) to indicate successful authentication.
+    // Try to find the user in the database
+    let user = await prisma.user.findUnique({
+      where: { uberId }
+    });
 
-  // Example:
-  // const user = await findOrCreateUser(profile);
-  // done(null, user);
+    if (user) {
+      // User exists, update their Uber access tokens
+      user = await prisma.user.update({
+        where: { uberId },
+        data: {
+          uberAccessToken: accessToken,
+          uberRefreshToken: refreshToken,
+        },
+      });
+    } else {
+      // User does not exist, create a new user with the Uber profile info
+      user = await prisma.user.create({
+        data: {
+          uberId: uberId,
+          uberAccessToken: accessToken,
+          uberRefreshToken: refreshToken,
+          // You can store other profile information here
+          // e.g. email: profile.email
+        },
+      });
+    }
+    
+    // Pass the user object to the done function which will be utilized by the next middleware or route handler
+    return done(null, user);
+
+  } catch (error) {
+    return done(error, null);
+  }
 }));
+
+
+
+
+
+
 
 app.get('/user/uber', passport.authenticate('uber'));
 
@@ -137,4 +171,3 @@ app.get('auth/uber/callback',
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-
