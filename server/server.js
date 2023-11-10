@@ -93,6 +93,33 @@ function ensureAuthenticated(req, res, next) {
     next();
   })(req, res, next);
 }
+app.put('/user/preferences', ensureAuthenticated, async (req, res) => {
+  const { userId } = req.user; // Assuming the user ID is stored in req.user
+  const { budget, safetyPriority, speedPriority } = req.body;
+
+  try {
+    // Update the user's preferences in the database
+    const updatedPreferences = await prisma.preferences.upsert({
+      where: { userId: userId },
+      update: {
+        budget: budget,
+        safetyPriority: safetyPriority,
+        speedPriority: speedPriority
+      },
+      create: {
+        userId: userId,
+        budget: budget,
+        safetyPriority: safetyPriority,
+        speedPriority: speedPriority
+      }
+    });
+
+    res.json({ message: 'Preferences updated successfully!', updatedPreferences });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 
 app.get('/dashboard', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
@@ -152,12 +179,6 @@ passport.use('uber', new passportOAuth2.Strategy({
     return done(error, null);
   }
 }));
-
-
-
-
-
-
 
 app.get('/user/uber', passport.authenticate('uber'));
 
