@@ -205,3 +205,13 @@ app.get('auth/uber/callback',
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+//Storing fetched data from Uber
+app.get('/refresh-uber-rides', ensureAuthenticated, async (req, res) => {
+  try {
+    await uberService.fetchAndStoreUberRides(req.user.uberAccessToken);
+    res.json({ message: 'Uber rides refreshed and stored successfully!' });
+  } catch (error) {
+    res.status(500).send('Error fetching and storing Uber rides');
+  }
+});
