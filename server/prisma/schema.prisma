@@ -21,6 +21,7 @@ model User {
   email       String       @unique
   password    String         
   preferences Preferences?
+  trips       Trip[]
 }
 
 model UberUser {
@@ -46,4 +47,23 @@ model Route {
   cost           Int
   estimatedTime  DateTime
   details        String
+}
+
+model Trip {
+  id               Int      @id @default(autoincrement())
+  service_provider String   // "Uber", "Lyft", "VTA", etc.
+  pickup_latitude  Float?
+  pickup_longitude Float?
+  dropoff_latitude Float?
+  dropoff_longitude Float?
+  duration         Int?     // Duration in seconds
+  distance         Float?   // Distance in miles or kilometers
+  cost_estimate    Float?   // Cost estimate provided by the service
+  requested_at     DateTime // When the trip was requested
+  started_at       DateTime? // When the trip actually started
+  completed_at     DateTime? // When the trip was completed
+  user_id          Int?     // If you want to relate trips to users
+  User             User?    @relation(fields: [user_id], references: [id])
+
+  @@map("trips")
 }
