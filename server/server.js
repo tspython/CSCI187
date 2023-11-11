@@ -133,6 +133,18 @@ app.get('/dashboard', passport.authenticate('jwt', { session: false }), async (r
   }
 });
 
+app.get('/dashboard', passport.authenticate('jwt', { session: false }), async (req, res) => {
+  try {
+    const uberAccessToken = req.user.uberAccessToken; // Assuming you have stored the Uber access token during authentication
+    const rideInfo = await uber.getCurrentRide(uberAccessToken);
+    const estimatedTimeRemaining = rideInfo.eta; // Modify this based on the actual structure of the Uber API response
+    res.json({ message: 'Welcome to your dashboard!', email: req.user.email, remainingTime: estimatedTimeRemaining });
+  }
+  catch (error) {
+    res.status(500).send('Error fetching ride information from Uber API');
+  }
+});
+
 // UBER
 passport.use('uber', new passportOAuth2.Strategy({
   authorizationURL: 'https://login.uber.com/oauth/v2/authorize',
@@ -179,6 +191,7 @@ passport.use('uber', new passportOAuth2.Strategy({
     return done(error, null);
   }
 }));
+
 
 app.get('/user/uber', passport.authenticate('uber'));
 

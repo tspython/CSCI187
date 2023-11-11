@@ -70,3 +70,11 @@ curl -X GET \
 -H "Authorization: Bearer YOUR_JWT_TOKEN" \
 http://localhost:3000/dashboard
 ```
+
+Database Testing
+
+To run the functionality tests, use the following commands:
+```bash
+npm install
+npx prisma migrate dev
+npm run test
