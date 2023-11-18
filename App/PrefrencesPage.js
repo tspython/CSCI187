@@ -16,7 +16,6 @@ const PreferencesScreen = () => {
           setBudget(preferences.budget);
         }
       } catch (e) {
-        // If there was an error loading the preferences, you might want to handle it here
         alert('Failed to load preferences.');
       }
     };
@@ -26,21 +25,14 @@ const PreferencesScreen = () => {
   
   const handleSavePreferences = async () => {
     try {
-      // Create a preferences object
       const preferences = {
         isFastestRoute: isFastestRoute,
         budget: budget
       };
-    // Convert the preferences object to a string
     const jsonValue = JSON.stringify(preferences);
-
-    // Save the preferences string to AsyncStorage under the key 'preferences'
     await AsyncStorage.setItem('preferences', jsonValue);
-
-    //provide  feedback to the user
     alert('Preferences saved!');
   } catch (e) {
-    // Saving failed, handle the error
     alert('Failed to save preferences.');
   }
 };
