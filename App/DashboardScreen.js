@@ -33,8 +33,13 @@ const DashboardScreen = () => {
   }, [navigation]);
 
   const handleLogout = async () => {
-    //await AsyncStorage.removeItem('authToken');
-    navigation.navigate('Login');
+    try {
+      // Clear user data or token from AsyncStorage
+      // await AsyncStorage.removeItem('authToken');
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -110,6 +115,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     textAlign: 'center',
+  },
+  logoutButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginTop: 10,
   },
 });
 
