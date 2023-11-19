@@ -10,10 +10,10 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
 
-   const [captcha, setCaptcha] = useState('');
+  const [captcha, setCaptcha] = useState('');
   const [captchaSolution, setCaptchaSolution] = useState('');
   const [captchaError, setCaptchaError] = useState('');
-const generateCaptcha = () => {
+  const generateCaptcha = () => {
     const num1 = Math.floor(Math.random() * 10);
     const num2 = Math.floor(Math.random() * 10);
     setCaptcha(`${num1} + ${num2}`);

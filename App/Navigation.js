@@ -15,9 +15,16 @@ const NavigationPage = ({ navigation }) => {
     navigation.navigate('PreferencesScreen');
   }
 
-  const getPreferences = () => {
-    // Get the user's preferences
-    // For example, get the user's preferred mode of transportation
+  const getPreferences = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('preferences');
+      if (jsonValue !== null) {
+        return JSON.parse(jsonValue);
+      }
+    } catch (e) {
+      alert('Failed to load preferences.');
+    }
+    return {};
   }
 
   const handleSearch = async () => {
@@ -35,7 +42,7 @@ const NavigationPage = ({ navigation }) => {
       const data = await response.json();
 
       // Navigate to results passing the necessary data
-      navigation.navigate('ResultsPage', { routes: data.routes });
+      navigation.navigate('ResultsPage', { routes: data.routes, preferences: getPreferences() });
     } catch (error) {
       setError(error.message);
     } finally {
