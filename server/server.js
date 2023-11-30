@@ -10,7 +10,7 @@ const { PrismaClient } = require('@prisma/client');
 const cors = require('cors');
 
 //custom modules
-const uber = require('./uber');
+//const uber = require('./uber');
 
 const prisma = new PrismaClient();
 const app = express();
@@ -123,10 +123,10 @@ app.put('/user/preferences', ensureAuthenticated, async (req, res) => {
 
 app.get('/dashboard', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
-    const uberAccessToken = req.user.uberAccessToken; // Assuming you have stored the Uber access token during authentication
-    const rideInfo = await uber.getCurrentRide(uberAccessToken);
-    const estimatedTimeRemaining = rideInfo.eta; // Modify this based on the actual structure of the Uber API response
-    res.json({ message: 'Welcome to your dashboard!', email: req.user.email, remainingTime: estimatedTimeRemaining });
+   // const uberAccessToken = req.user.uberAccessToken; // Assuming you have stored the Uber access token during authentication
+    //const rideInfo = await uber.getCurrentRide(uberAccessToken);
+    //const estimatedTimeRemaining = rideInfo.eta; // Modify this based on the actual structure of the Uber API response
+    res.json({ message: 'Welcome to your dashboard!', email: req.user.email,});
   }
   catch (error) {
     res.status(500).send('Error fetching ride information from Uber API');
@@ -135,83 +135,14 @@ app.get('/dashboard', passport.authenticate('jwt', { session: false }), async (r
 
 app.get('/dashboard', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
-    const uberAccessToken = req.user.uberAccessToken; // Assuming you have stored the Uber access token during authentication
-    const rideInfo = await uber.getCurrentRide(uberAccessToken);
-    const estimatedTimeRemaining = rideInfo.eta; // Modify this based on the actual structure of the Uber API response
-    res.json({ message: 'Welcome to your dashboard!', email: req.user.email, remainingTime: estimatedTimeRemaining });
+   // const uberAccessToken = req.user.uberAccessToken; // Assuming you have stored the Uber access token during authentication
+    //const rideInfo = await uber.getCurrentRide(uberAccessToken);
+    //const estimatedTimeRemaining = rideInfo.eta; // Modify this based on the actual structure of the Uber API response
+    res.json({ message: 'Welcome to your dashboard!', email: req.user.email });
   }
   catch (error) {
     res.status(500).send('Error fetching ride information from Uber API');
   }
 });
 
-// UBER
-passport.use('uber', new passportOAuth2.Strategy({
-  authorizationURL: 'https://login.uber.com/oauth/v2/authorize',
-  tokenURL: 'https://login.uber.com/oauth/v2/token',
-  clientID: 'YOUR_CLIENT_ID',
-  clientSecret: 'YOUR_CLIENT_SECRET',
-  callbackURL: 'http://your-callback-url.com/auth/uber/callback', // Update this URL
-}, async (accessToken, refreshToken, profile, done) => {
-  try {
-    // Assuming the profile contains an identifier such as 'id'
-    const uberId = profile.id;
 
-    // Try to find the user in the database
-    let user = await prisma.user.findUnique({
-      where: { uberId }
-    });
-
-    if (user) {
-      // User exists, update their Uber access tokens
-      user = await prisma.user.update({
-        where: { uberId },
-        data: {
-          uberAccessToken: accessToken,
-          uberRefreshToken: refreshToken,
-        },
-      });
-    } else {
-      // User does not exist, create a new user with the Uber profile info
-      user = await prisma.user.create({
-        data: {
-          uberId: uberId,
-          uberAccessToken: accessToken,
-          uberRefreshToken: refreshToken,
-          // You can store other profile information here
-          // e.g. email: profile.email
-        },
-      });
-    }
-    
-    // Pass the user object to the done function which will be utilized by the next middleware or route handler
-    return done(null, user);
-
-  } catch (error) {
-    return done(error, null);
-  }
-}));
-
-
-app.get('/user/uber', passport.authenticate('uber'));
-
-app.get('auth/uber/callback',
-        passport.authenticate('uber', { faiureRedirect: '/login' }),
-        (req, res) => {
-          res.redirect('/dashbaord');
-        }
-       );
-
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-
-//Storing fetched data from Uber
-app.get('/refresh-uber-rides', ensureAuthenticated, async (req, res) => {
-  try {
-    await uberService.fetchAndStoreUberRides(req.user.uberAccessToken);
-    res.json({ message: 'Uber rides refreshed and stored successfully!' });
-  } catch (error) {
-    res.status(500).send('Error fetching and storing Uber rides');
-  }
-});
