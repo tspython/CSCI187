@@ -20,6 +20,78 @@ const Dashboard = () => {
   const [showResults, setShowResults] = useState(false);
   const [uber, setUber] = useState("");
 
+  const displayUberData = (uberData) => {
+  let dataArray = [];
+
+  try {
+    // Parse the JSON-like text into an array of objects
+    dataArray = JSON.parse(uberData);
+  } catch (error) {
+    console.error('Error parsing Uber data:', error);
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {dataArray.map((ride, index) => (
+        <Text key={index}>
+          Ride Type: {ride.rideType}, Time: {ride.estimatedTripTime}, Fare: {ride.fare}
+        </Text>
+      ))}
+    </SafeAreaView>
+  );
+};
+
+  async function getTransitOptions(origin, destination) {
+        const apiKey = 'AIzaSyDx-gVA7mH2jyLznELffrzD-me4mVkJZHA';
+    const apiUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=transit&key=${apiKey}`;
+
+    fetch(apiUrl)
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Network response was not ok.');
+        })
+        .then(data => {
+            function extractTransitInfo(data) {
+                const transitProviders = [];
+                let totalDurationText = null;
+                let totalFareText = null;
+
+                data.routes.forEach(route => {
+                    route.legs.forEach(leg => {
+                        leg.steps.forEach(step => {
+                            if (step.transit_details) {
+                                const transitLine = step.transit_details.line;
+                                if (transitLine.agencies) {
+                                    transitLine.agencies.forEach(agency => {
+                                        transitProviders.push(agency.name);
+                                    });
+                                }
+                                totalDurationText = leg.duration.text;
+                                totalFareText = route.fare ? route.fare.text : null;
+                            }
+                        });
+                    });
+                });
+
+                // Remove duplicates from transit providers list
+                const uniqueTransitProviders = Array.from(new Set(transitProviders));
+
+                return {
+                    total_duration: totalDurationText,
+                    total_fare: totalFareText,
+                    transit_provider: uniqueTransitProviders
+                };
+            }
+
+            const transitInfo = extractTransitInfo(data);
+            console.log(transitInfo);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+  }
   async function getRouteInfo(startLat, startLng, endLat, endLng) {
     try {
         // Construct the URL for the OSRM routing service
@@ -162,10 +234,13 @@ function parseRidesData(jsonData) {
   return (
     <SafeAreaView style={styles.container}>
       <Modal presentationStyle='pageSheet' onRequestClose={()=> setShowResults(false)} visible={showResults}>
-        <SafeAreaView style={styles.container}>
-          <Text>{uber}</Text>
-        </SafeAreaView>
+       <SafeAreaView style={styles.container}>
+         {displayUberData(uber)}
+         //{displayLyftData(lyft)}
+         //{displayTranistData(transit)}
+       </SafeAreaView>
       </Modal>
+
       <View style={styles.searchContainer}>
 
         { !showFromModal &&
@@ -375,5 +450,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+  title: {
+    fontweight: 'bold',
+    fontsSize: 24,
+    marginBottom: 10,
+  }
 });
 export default Dashboard;
