@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 
@@ -27,11 +27,6 @@ const RegistrationScreen = () => {
       return;
     }
     try {
-      const response = await axios.post('http://localhost:3000/register', {
-        email: email,
-        password: password,
-      });
-      console.log(response.data);
       Alert.alert("Success", "Registration successful!");
       navigation.navigate('Login'); // Navigate to the Login screen
     } catch (error) {

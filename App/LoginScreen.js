@@ -17,15 +17,7 @@ const LoginScreen = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/login', {
-        email: email,
-        password: password,
-      });
-
-      const token = response.data.token; // Assuming the server returns a token
-     // await AsyncStorage.setItem('authToken', token); // Save token for future authentication
-
-      navigation.navigate('Dashboard'); // Navigate to the Dashboard screen
+      navigation.navigate('TravelPreferences'); // Navigate to the Dashboard screen
     } catch (error) {
       console.error(error);
       setError('Login failed. Please check your credentials.');
