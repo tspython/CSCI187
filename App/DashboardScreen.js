@@ -20,36 +20,70 @@ const Dashboard = () => {
   const [showResults, setShowResults] = useState(false);
   const [uber, setUber] = useState("");
 
-  async function getRouteInfo(startLat, startLng, endLat, endLng) {
-    try {
-        // Construct the URL for the OSRM routing service
-        const osrmUrl = `http://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=false`;
 
-        // Make the API request
-        const response = await fetch(osrmUrl);
-        const data = await response.json();
 
-        // Check if the response has routes
-        if (data.routes && data.routes.length > 0) {
-            const route = data.routes[0];
+  function extractFareAndTimeInfoFromHtml(htmlString) {
+    const fareRegex = /<li><b>(.*?)<\/b>: (\$\d+-\d+)<\/li>/g;
+    const timeRegex = /estimated to take around <i>(\d+ mins)/;
+    let fareMatch;
+    let timeMatch;
+    let fares = [];
+    let estimatedTime = 'unknown';
 
-            // Extract distance and duration
-            // Distance is in meters, duration is in seconds
-            const distance = route.distance; // in meters
-            const duration = route.duration; // in seconds
-
-            return {
-                distance: distance,
-                duration: duration
-            };
-        } else {
-            throw new Error('No route found');
-        }
-    } catch (error) {
-        console.error('Error fetching route info:', error);
-        return null;
+    // Extracting fares
+    while ((fareMatch = fareRegex.exec(htmlString)) !== null) {
+        fares.push({ type: fareMatch[1], price: fareMatch[2] });
     }
+
+    // Extracting estimated time
+    timeMatch = htmlString.match(timeRegex);
+    if (timeMatch) {
+        estimatedTime = timeMatch[1];
+    }
+
+    return { fares, estimatedTime };
 }
+
+  async function getLyft(originLatitude, originLongitude, destinationLatitude, destinationLongitude){
+    var myHeaders = new Headers();
+    myHeaders.append("Accept", "application/json");
+    myHeaders.append("Content-Type", "application/json");
+    
+    var raw = JSON.stringify({
+      "pickup": {
+        "lat": originLatitude,
+        "lon": originLongitude
+      },
+      "dropoff": {
+        "lat": destinationLatitude,
+        "lon": destinationLongitude
+      }
+    });
+    
+    var requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: raw,
+      redirect: 'follow'
+    };
+    
+    return fetch("https://lyftrideestimate.com/api/routes", requestOptions)
+      .then(response => response.json())
+      .then(result => {
+        var requestOptions = {
+          method: 'GET',
+          redirect: 'follow'
+        };
+        
+        return fetch(`https://lyftrideestimate.com/route/${result['slug']}`, requestOptions)
+          .then(response => response.text())
+          .then(result => {console.log(result)
+            return extractFareAndTimeInfoFromHtml(result);
+          })
+          .catch(error => console.log('error', error));
+      })
+      .catch(error => console.log('error', error));
+  }
 
 function parseRidesData(jsonData) {
   // Checking if 'data' and 'products' exist in the JSON
