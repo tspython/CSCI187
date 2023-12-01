@@ -44,14 +44,17 @@ const Dashboard = () => {
     );
   }
   
-
   function extractFareAndTimeInfoFromHtml(htmlString) {
     const fareRegex = /<li><b>(.*?)<\/b>: (\$\d+-\d+)<\/li>/g;
-    const timeRegex = /estimated to take around <i>(\d+ mins)/;
+    const timeRegex = /estimated to take around <i>(\d+ mins?)<\/i>/;
+    const distanceRegex = /The trip covers a distance of <b>(.+)<\/b>/;
+
     let fareMatch;
     let timeMatch;
+    let distanceMatch;
     let fares = [];
     let estimatedTime = 'unknown';
+    let distance = 'unknown';
 
     // Extracting fares
     while ((fareMatch = fareRegex.exec(htmlString)) !== null) {
@@ -64,8 +67,15 @@ const Dashboard = () => {
         estimatedTime = timeMatch[1];
     }
 
-    return { fares, estimatedTime };
+    // Extracting distance
+    distanceMatch = htmlString.match(distanceRegex);
+    if (distanceMatch) {
+        distance = distanceMatch[1];
+    }
+
+    return { fares, estimatedTime, distance };
 }
+
 
   async function getLyft(originLatitude, originLongitude, destinationLatitude, destinationLongitude){
     var myHeaders = new Headers();
@@ -100,7 +110,7 @@ const Dashboard = () => {
         
         return fetch(`https://lyftrideestimate.com/route/${result['slug']}`, requestOptions)
           .then(response => response.text())
-          .then(result => {console.log(result)
+          .then(result => {
             return extractFareAndTimeInfoFromHtml(result);
           })
           .catch(error => console.log('error', error));
@@ -191,18 +201,30 @@ function parseRidesData(jsonData) {
           const rideType = product.displayName;
           const estimatedTripTime = product.estimatedTripTime;
           const fare = product.fare;
+          let distanceInMiles = 0;
+
+          // Checking if 'meta' and 'unmodifiedDistance' exist in the product
+          if (product.meta) {
+              const meta = JSON.parse(product.meta);
+              if (meta.upfrontFare && meta.upfrontFare.unmodifiedDistance) {
+                  // Converting meters to miles
+                  distanceInMiles = meta.upfrontFare.unmodifiedDistance * 0.000621371;
+              }
+          }
 
           // Adding to the rides array
           rides.push({
               rideType,
               estimatedTripTime,
-              fare
+              fare,
+              distanceInMiles: distanceInMiles.toFixed(2) // Rounding to 2 decimal places
           });
       });
   });
 
   return rides;
 }
+
 
   async function getRidePrice(originLatitude, originLongitude, destinationLatitude, destinationLongitude) {
     var myHeaders = new Headers();
@@ -404,16 +426,16 @@ function parseRidesData(jsonData) {
         <TouchableOpacity
           style={styles.routeButton}
           onPress={async() => {
-            // getLyft(fromLat, fromLon, toLat, toLon).then((result) => {
-            //   console.log(result);
-            // })
+             getLyft(fromLat, fromLon, toLat, toLon).then((result) => {
+               console.log(result);
+             })
             getGoogle(fromLat, fromLon, toLat, toLon).then((result) => {
               console.log(JSON.stringify(result));
             })
-            // getRidePrice(fromLat, fromLon, toLat, toLon).then((result) => {
-            //   console.log(result);
-            //   setUber(JSON.stringify(result));
-            // })
+             getRidePrice(fromLat, fromLon, toLat, toLon).then((result) => {
+               console.log(result);
+               setUber(JSON.stringify(result));
+            })
             setShowResults(true)
           }}
         >
