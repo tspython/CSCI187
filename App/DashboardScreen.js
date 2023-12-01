@@ -27,27 +27,6 @@ const Dashboard = () => {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
-    const [budget, setBudget] = useState(30);
-  const [speed, setSpeed] = useState(5);
-  const [safety, setSafety] = useState(10);
-
-  useEffect(() => {
-    AsyncStorage.getItem('budget').then((value) => {
-      if (value) {
-        setBudget(parseInt(value));
-      }
-    });
-    AsyncStorage.getItem('speed').then((value) => {
-      if (value) {
-        setSpeed(parseInt(value));
-      }
-    });
-    AsyncStorage.getItem('safety').then((value) => {
-      if (value) {
-        setSafety(parseInt(value));
-      }
-    });
-  }, []);
 
   useEffect(() => {
     if (fromLat && fromLon && toLat && toLon) {
@@ -443,9 +422,22 @@ function parseRidesData(jsonData) {
             getRidePrice(fromLat, fromLon, toLat, toLon)
         ]);
         const transportationOptions = parseTransportationOptions(lyftData, uberData, publicTransitData);
-        console.log(rankOptions(budget, safety, speed, transportationOptions))
-        SetRankings(rankOptions(budget, safety, speed, transportationOptions));
-      }}
+        AsyncStorage.getItem('budget').then((budget) => {
+          if (budget) {
+            AsyncStorage.getItem('speed').then((speed) => {
+              if (speed) {
+                AsyncStorage.getItem('safety').then((safety) => {
+                  if (safety) {
+                    SetRankings(rankOptions(parseInt(budget), parseInt(safety), parseInt(speed), transportationOptions));
+                  }
+                });
+              }
+            });
+          }else{
+            SetRankings(rankOptions(100, 10, 10, transportationOptions));
+          }
+        });
+              }}
     >
       <Text style={styles.buttonText}>Search Routes</Text>
     </TouchableOpacity>
@@ -523,24 +515,7 @@ style={styles.suggestionsList}
 
       
 
-<View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.routeButton}
-          onPress={async() => {
-            const [lyftData, publicTransitData, uberData] = await Promise.all([
-                getLyft(fromLat, fromLon, toLat, toLon),
-                getGoogle(fromLat, fromLon, toLat, toLon),
-                getRidePrice(fromLat, fromLon, toLat, toLon)
-              ]);
-            const transportationOptions = parseTransportationOptions(lyftData, uberData, publicTransitData);
-            console.log(transportationOptions)
-            SetRankings(rankOptions(budget, safety, speed, transportationOptions));
-            setShowResults(true)
-          }}
-        >
-          <Text style={styles.buttonText}>Search Routes</Text>
-        </TouchableOpacity>
-      </View>
+
     </View>  );
 };
 
