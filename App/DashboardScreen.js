@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Text, Modal, FlatList, TextInput } 
 import MapView, { PROVIDER_DEFAULT, Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
+import { Parser } from 'htmlparser2';
 
 const Dashboard = () => {
   const [from, setFrom] = useState('');
@@ -20,6 +20,69 @@ const Dashboard = () => {
   const [showResults, setShowResults] = useState(false);
   const [uber, setUber] = useState("");
 
+
+  function extractFareAndTimeInfoFromHtml(htmlString) {
+    const fareRegex = /<li><b>(.*?)<\/b>: (\$\d+-\d+)<\/li>/g;
+    const timeRegex = /estimated to take around <i>(\d+ mins)/;
+    let fareMatch;
+    let timeMatch;
+    let fares = [];
+    let estimatedTime = 'unknown';
+
+    // Extracting fares
+    while ((fareMatch = fareRegex.exec(htmlString)) !== null) {
+        fares.push({ type: fareMatch[1], price: fareMatch[2] });
+    }
+
+    // Extracting estimated time
+    timeMatch = htmlString.match(timeRegex);
+    if (timeMatch) {
+        estimatedTime = timeMatch[1];
+    }
+
+    return { fares, estimatedTime };
+}
+
+  async function getLyft(originLatitude, originLongitude, destinationLatitude, destinationLongitude){
+    var myHeaders = new Headers();
+    myHeaders.append("Accept", "application/json");
+    myHeaders.append("Content-Type", "application/json");
+    
+    var raw = JSON.stringify({
+      "pickup": {
+        "lat": originLatitude,
+        "lon": originLongitude
+      },
+      "dropoff": {
+        "lat": destinationLatitude,
+        "lon": destinationLongitude
+      }
+    });
+    
+    var requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: raw,
+      redirect: 'follow'
+    };
+    
+    return fetch("https://lyftrideestimate.com/api/routes", requestOptions)
+      .then(response => response.json())
+      .then(result => {
+        var requestOptions = {
+          method: 'GET',
+          redirect: 'follow'
+        };
+        
+        return fetch(`https://lyftrideestimate.com/route/${result['slug']}`, requestOptions)
+          .then(response => response.text())
+          .then(result => {console.log(result)
+            return extractFareAndTimeInfoFromHtml(result);
+          })
+          .catch(error => console.log('error', error));
+      })
+      .catch(error => console.log('error', error));
+  }
   async function getRouteInfo(startLat, startLng, endLat, endLng) {
     try {
         // Construct the URL for the OSRM routing service
@@ -283,7 +346,7 @@ function parseRidesData(jsonData) {
         <TouchableOpacity
           style={styles.routeButton}
           onPress={async() => {
-            getRidePrice(fromLat, fromLon, toLat, toLon).then((result) => {
+            getLyft(fromLat, fromLon, toLat, toLon).then((result) => {
               console.log(result);
               setUber(JSON.stringify(result));
             })
