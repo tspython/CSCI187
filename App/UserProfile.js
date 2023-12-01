@@ -1,33 +1,37 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
 const UserProfile = () => {
-  const [name, setName] = useState('John Doe');
   const [email, setEmail] = useState('johndoe@example.com');
   const [password, setPassword] = useState('********'); // Password is initially hidden
+  const navigation = useNavigation();
 
-  const handleSave = () => {
-    // Save user profile information
-    console.log('Name:', name);
-    console.log('Email:', email);
-    console.log('Password:', password); // In a real app, handle password securely (e.g., encryption)
+
+  useEffect(() => {
+    AsyncStorage.getItem('user').then((value) => {
+      if (value) {
+        setEmail(value);
+        AsyncStorage.getItem(value).then((value) => {
+          setPassword(value);
+        });
+      }
+    });
+  }, [])
+  const handleLogout = async() => {
+    // Logout logic here
+    await AsyncStorage.removeItem('user');
+    navigation.navigate('StartScreen');
+    console.log('Logout pressed');
   };
-
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={handleSave}>
         <Image
-          source={{ uri: 'URL_TO_YOUR_PROFILE_IMAGE' }} // Replace with your profile image URI
+          source={{ uri: 'https://bunnynet-avatars.b-cdn.net/.ai/img/dalle-256/avatar/hello@gmail.com/rabbit.jpg?width=256' }} // Replace with your profile image URI
           style={styles.profileImage}
         />
-      </TouchableOpacity>
 
-      <TextInput
-        style={styles.input}
-        value={name}
-        onChangeText={(text) => setName(text)}
-        placeholder="Name"
-      />
       <TextInput
         style={styles.input}
         value={email}
@@ -42,6 +46,9 @@ const UserProfile = () => {
         placeholder="Password"
         secureTextEntry={true} // Hides the entered text
       />
+       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -53,10 +60,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    marginBottom: 20,
+    width: 256,
+    height: 256,
+    borderRadius: 256,
+    marginBottom: 70,
   },
   input: {
     width: '80%',
@@ -65,6 +72,20 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 10,
     marginBottom: 20,
+  },
+  logoutButton: {
+    width: '80%',
+    height: 50,
+    backgroundColor: 'red',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+    position: 'absolute', // Position the button at the bottom
+    bottom: 10, // Spacing from the bottom
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
 

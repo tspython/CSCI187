@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -8,17 +8,20 @@ import LoginScreen from './LoginScreen';
 import DashboardScreen from './DashboardScreen';
 import TravelPreferences from './TravelPreferences';
 import UserProfile from './UserProfile';
+import StartScreen from './StartScreen';
+import Dashboard from './DashboardScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const DashboardStack = () => {
   return (
-    <Stack.Navigator initialRouteName="Dashboard" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="StartScreen" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="StartScreen" component={StartScreen}/>
       <Stack.Screen name="Registration" component={RegistrationScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="TravelPreferences" component={TravelPreferences} options={{ headerShown: false }} />
-      <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Dashboard" component={TabNavigator} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };
@@ -50,7 +53,7 @@ const TabNavigator = () => {
     >
       <Tab.Screen
         name="Dashboard"
-        component={DashboardStack}
+        component={Dashboard}
         options={{
          tabBarLabel: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
@@ -85,7 +88,7 @@ const TabNavigator = () => {
 const App = () => {
   return (
     <NavigationContainer>
-      <TabNavigator />
+      <DashboardStack />
     </NavigationContainer>
   );
 };

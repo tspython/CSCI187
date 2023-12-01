@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import axios from 'axios';
-//import AsyncStorage from '@react-native-community/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 const LoginScreen = () => {
@@ -17,7 +16,18 @@ const LoginScreen = () => {
     }
 
     try {
-      navigation.navigate('TravelPreferences'); // Navigate to the Dashboard screen
+      if(!await AsyncStorage.getItem(email)){
+        setError('Email not found.');
+        return;
+      }
+      else if(password !== await AsyncStorage.getItem(email)){
+        setError('Incorrect password.');
+        return;
+      }else{
+        AsyncStorage.setItem('user', email);
+        Alert.alert("Success", "Scuccessfully logged in!");
+        navigation.navigate('Dashboard');
+       } // Navigate to the Dashboard screen
     } catch (error) {
       console.error(error);
       setError('Login failed. Please check your credentials.');

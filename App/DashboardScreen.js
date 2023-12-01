@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Modal, FlatList, TextInput } from 'react-native';
 import MapView, { PROVIDER_DEFAULT, Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,8 +18,45 @@ const Dashboard = () => {
   const [lastRequestTime, setLastRequestTime] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [uber, setUber] = useState("");
-
-
+  const [mapRegion, setMapRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+  useEffect(() => {
+    if (fromLat && fromLon && toLat && toLon) {
+      console.log('Map region updated');
+      // Calculate the midpoint of the two markers
+      const midLat = (fromLat + toLat) / 2;
+      const midLon = (fromLon + toLon) / 2;
+  
+      // Update the map region
+      setMapRegion({
+        latitude: midLat,
+        longitude: midLon,
+        latitudeDelta: Math.abs(fromLat - toLat) * 2,
+        longitudeDelta: Math.abs(fromLon - toLon) * 2,
+      });
+    }
+    else if(fromLat && fromLon){
+      console.log('Map region updated');
+      setMapRegion({
+        latitude: fromLat,
+        longitude: fromLon,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    }else if(toLat && toLon){
+      console.log('Map region updated');
+      setMapRegion({
+        latitude: toLat,
+        longitude: toLon,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    }
+  }, [fromLat, fromLon, toLat, toLon]);
   function displayUberData(){
     if (!uber) {
       return <Text>No Uber data</Text>;
@@ -282,7 +319,7 @@ function parseRidesData(jsonData) {
   }
 
   const fetchAddressSuggestions = async (query, setSuggestions) => {
-    if (query && (Date.now() - lastRequestTime) >= 1000) { // 60 seconds
+    if (query && (Date.now() - lastRequestTime) >= 500) { // 60 seconds
       setLastRequestTime(Date.now());
       try {
         const response = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
@@ -384,12 +421,7 @@ function parseRidesData(jsonData) {
       <MapView
         provider={PROVIDER_DEFAULT}
         style={styles.map}
-        initialRegion={{
-          latitude: 37.78825,
-          longitude: -122.4324,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
+        region={mapRegion}
       >
         {fromLat && fromLon && (
           <Marker

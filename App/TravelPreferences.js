@@ -1,16 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TravelPreferences = () => {
   const navigation = useNavigation();
-  const [budget, setBudget] = useState(12);
-  const [speed, setSpeed] = useState(25);
-  const [safety, setSafety] = useState(24);
+  const [budget, setBudget] = useState(30);
+  const [speed, setSpeed] = useState(5);
+  const [safety, setSafety] = useState(10);
 
-  const handleSavePreferences = () => {
+  useEffect(() => {
+    AsyncStorage.getItem('budget').then((value) => {
+      if (value) {
+        setBudget(parseInt(value));
+      }
+    });
+    AsyncStorage.getItem('speed').then((value) => {
+      if (value) {
+        setSpeed(parseInt(value));
+      }
+    });
+    AsyncStorage.getItem('safety').then((value) => {
+      if (value) {
+        setSafety(parseInt(value));
+      }
+    });
+  }, []);
+
+  const handleSavePreferences = async() => {
     // Handle the save action, like updating the state or sending to a server
+    await AsyncStorage.setItem('budget', `${budget}`);
+    await AsyncStorage.setItem('speed',  `${speed}`);
+    await AsyncStorage.setItem('safety',  `${safety}`);
     navigation.navigate('Dashboard');
   };
 
@@ -24,7 +46,7 @@ const TravelPreferences = () => {
             value={budget}
             onValueChange={setBudget}
             minimumValue={1}
-            maximumValue={100}
+            maximumValue={300}
             step={1}
           />
           <Text>${budget}</Text>
@@ -36,11 +58,11 @@ const TravelPreferences = () => {
             style={{ width: 200, height: 40 }}
             value={speed}
             onValueChange={setSpeed}
-            minimumValue={5}
-            maximumValue={60}
+            minimumValue={0}
+            maximumValue={5}
             step={1}
           />
-          <Text>{`<${speed}min`}</Text>
+          <Text>{`${speed}`}</Text>
         </View>
 
         <View style={styles.preference}>
@@ -50,7 +72,7 @@ const TravelPreferences = () => {
             value={safety}
             onValueChange={setSafety}
             minimumValue={1}
-            maximumValue={100}
+            maximumValue={20}
             step={1}
           />
           <Text>{safety}</Text>

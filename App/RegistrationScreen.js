@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 const RegistrationScreen = () => {
@@ -27,6 +27,10 @@ const RegistrationScreen = () => {
       return;
     }
     try {
+      await AsyncStorage.setItem(
+        email,
+        password,
+      );
       Alert.alert("Success", "Registration successful!");
       navigation.navigate('Login'); // Navigate to the Login screen
     } catch (error) {
