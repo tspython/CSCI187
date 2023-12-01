@@ -20,69 +20,6 @@ const Dashboard = () => {
   const [showResults, setShowResults] = useState(false);
   const [uber, setUber] = useState("");
 
-
-  function extractFareAndTimeInfoFromHtml(htmlString) {
-    const fareRegex = /<li><b>(.*?)<\/b>: (\$\d+-\d+)<\/li>/g;
-    const timeRegex = /estimated to take around <i>(\d+ mins)/;
-    let fareMatch;
-    let timeMatch;
-    let fares = [];
-    let estimatedTime = 'unknown';
-
-    // Extracting fares
-    while ((fareMatch = fareRegex.exec(htmlString)) !== null) {
-        fares.push({ type: fareMatch[1], price: fareMatch[2] });
-    }
-
-    // Extracting estimated time
-    timeMatch = htmlString.match(timeRegex);
-    if (timeMatch) {
-        estimatedTime = timeMatch[1];
-    }
-
-    return { fares, estimatedTime };
-}
-
-  async function getLyft(originLatitude, originLongitude, destinationLatitude, destinationLongitude){
-    var myHeaders = new Headers();
-    myHeaders.append("Accept", "application/json");
-    myHeaders.append("Content-Type", "application/json");
-    
-    var raw = JSON.stringify({
-      "pickup": {
-        "lat": originLatitude,
-        "lon": originLongitude
-      },
-      "dropoff": {
-        "lat": destinationLatitude,
-        "lon": destinationLongitude
-      }
-    });
-    
-    var requestOptions = {
-      method: 'POST',
-      headers: myHeaders,
-      body: raw,
-      redirect: 'follow'
-    };
-    
-    return fetch("https://lyftrideestimate.com/api/routes", requestOptions)
-      .then(response => response.json())
-      .then(result => {
-        var requestOptions = {
-          method: 'GET',
-          redirect: 'follow'
-        };
-        
-        return fetch(`https://lyftrideestimate.com/route/${result['slug']}`, requestOptions)
-          .then(response => response.text())
-          .then(result => {console.log(result)
-            return extractFareAndTimeInfoFromHtml(result);
-          })
-          .catch(error => console.log('error', error));
-      })
-      .catch(error => console.log('error', error));
-  }
   async function getRouteInfo(startLat, startLng, endLat, endLng) {
     try {
         // Construct the URL for the OSRM routing service
@@ -225,10 +162,13 @@ function parseRidesData(jsonData) {
   return (
     <SafeAreaView style={styles.container}>
       <Modal presentationStyle='pageSheet' onRequestClose={()=> setShowResults(false)} visible={showResults}>
-        <SafeAreaView style={styles.container}>
-          <Text>{uber}</Text>
-        </SafeAreaView>
+       <SafeAreaView style={styles.container}>
+         {displayUberData(uber)}
+         //{displayLyftData(lyft)}
+         //{displayTranistData(transit)}
+       </SafeAreaView>
       </Modal>
+
       <View style={styles.searchContainer}>
 
         { !showFromModal &&
@@ -438,5 +378,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+  title: {
+    fontweight: 'bold',
+    fontsSize: 24,
+    marginBottom: 10,
+  }
 });
 export default Dashboard;
