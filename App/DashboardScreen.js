@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [lastRequestTime, setLastRequestTime] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [uber, setUber] = useState("");
+  const [transitInfo, setTransitInfo] = useState(null);
 
   const displayUberData = (uberData) => {
   let dataArray = [];
@@ -41,9 +42,22 @@ const Dashboard = () => {
   );
 };
 
-  async function getTransitOptions(origin, destination) {
-        const apiKey = 'AIzaSyDx-gVA7mH2jyLznELffrzD-me4mVkJZHA';
-    const apiUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=transit&key=${apiKey}`;
+  const searchTransitOptions = async () => {
+    if (fromLat && fromLon && toLat && toLon) {
+      try {
+        const transitData = await getTransitOptions(
+          `${fromLat},${fromLon}`,
+          `${toLat},${toLon}`
+        );
+        setTransitInfo(transitData); // Set transit information in state
+      } catch (error) {
+        console.error('Error fetching transit options:', error);
+      }
+    }
+  };
+    async function getTransitOptions(originLatitude, originLongitude, destinationLatitude, destinationLongitude) {
+      const apiKey = 'AIzaSyDx-gVA7mH2jyLznELffrzD-me4mVkJZHA';
+      const apiUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${originLatitude},${originLongitude}&destination=${destinationLatitude},${destinationLongitude}&mode=transit&key=${apiKey}`;
 
     fetch(apiUrl)
         .then(response => {
