@@ -4,7 +4,7 @@ import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
 
 const TravelPreferences = () => {
-    const navigation = useNavigation();
+  const navigation = useNavigation();
   const [budget, setBudget] = useState(12);
   const [speed, setSpeed] = useState(25);
   const [safety, setSafety] = useState(24);
@@ -16,51 +16,48 @@ const TravelPreferences = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Travel Preferences</Text>
-      
-      <View style={styles.preference}>
-        <Text>Budget</Text>
-        <Slider
-            style={{width: 200, height: 40}}
-          value={budget}
-          onValueChange={setBudget}
-          minimumValue={1}
-          maximumValue={100}
-          step={1}
-        />
-        <Text>${budget}</Text>
+      <View style={styles.content}>
+        <View style={styles.preference}>
+          <Text>Budget</Text>
+          <Slider
+            style={{ width: 200, height: 40 }}
+            value={budget}
+            onValueChange={setBudget}
+            minimumValue={1}
+            maximumValue={100}
+            step={1}
+          />
+          <Text>${budget}</Text>
+        </View>
+
+        <View style={styles.preference}>
+          <Text>Speed</Text>
+          <Slider
+            style={{ width: 200, height: 40 }}
+            value={speed}
+            onValueChange={setSpeed}
+            minimumValue={5}
+            maximumValue={60}
+            step={1}
+          />
+          <Text>{`<${speed}min`}</Text>
+        </View>
+
+        <View style={styles.preference}>
+          <Text>Safety</Text>
+          <Slider
+            style={{ width: 200, height: 40 }}
+            value={safety}
+            onValueChange={setSafety}
+            minimumValue={1}
+            maximumValue={100}
+            step={1}
+          />
+          <Text>{safety}</Text>
+        </View>
+
+        <Button title="Save" onPress={handleSavePreferences} />
       </View>
-      
-      <View style={styles.preference}>
-        <Text>Speed</Text>
-        <Slider
-            style={{width: 200, height: 40}}
-          value={speed}
-          onValueChange={setSpeed}
-          minimumValue={5}
-          maximumValue={60}
-          step={1}
-        />
-        <Text>{`<${speed}min`}</Text>
-      </View>
-      
-      <View style={styles.preference}>
-        <Text>Safety</Text>
-        <Slider
-          style={{width: 200, height: 40}}
-          value={safety}
-          onValueChange={setSafety}
-          minimumValue={1}
-          maximumValue={100}
-          step={1}
-        />
-        <Text>{safety}</Text>
-      </View>
-      
-      <Button
-        title="Save"
-        onPress={handleSavePreferences}
-      />
     </View>
   );
 };
@@ -68,12 +65,12 @@ const TravelPreferences = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+  content: {
+    width: '100%',
   },
   preference: {
     flexDirection: 'row',
