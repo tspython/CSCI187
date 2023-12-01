@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal, FlatList, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, FlatList, TextInput, ActivityIndicator } from 'react-native';
 import MapView, { PROVIDER_DEFAULT, Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [lastRequestTime, setLastRequestTime] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [rankings ,SetRankings] = useState({});
+  const [loading, setLoading] = useState(false);
   const [mapRegion, setMapRegion] = useState({
     latitude: 37.78825,
     longitude: -122.4324,
@@ -62,35 +63,6 @@ const Dashboard = () => {
     }
   }, [fromLat, fromLon, toLat, toLon]);
   
-  async function displayRanking() {
-   if (!rankings) {
-      return <Text>no rankings</Text>;
-    }
-
-  return (
-    <SafeAreaView style={styles.container}>
-  {rankings && rankings.map((item, index) => {
-    // Logging for debugging
-    
-
-    // Assuming item.option and item.totalDifference are correctly structured
-    const { type, cost, safety, distance, time } = item.option;
-
-    return (
-      <View key={index} style={styles.optionContainer}>
-        <Text>Type: {type}</Text>
-        <Text>Cost: {cost}</Text>
-        <Text>Safety: {safety}</Text>
-        <Text>Distance: {distance}</Text>
-        <Text>Time: {time}</Text>
-        {/* Add more fields as needed */}
-        <Text>Total Difference: {item.totalDifference}</Text>
-      </View>
-    );
-  })}
-</SafeAreaView>
-  );
-}
 
 
   function extractFareAndTimeInfoFromHtml(htmlString) {
@@ -330,13 +302,29 @@ function parseRidesData(jsonData) {
   const Item = ({ item }) => (
     <View style={styles.item}>
       <Text style={styles.title}>{item.option.type}</Text>
-      <Text>Cost: ${item.option.cost}</Text>
-      <Text>Distance: {item.option.distance} miles</Text>
-      <Text>Safety Rating: {item.option.safety}</Text>
-      <Text>Speed Rating: {item.option.speedRating}</Text>
-      <Text>Estimated Time: {item.option.time} min</Text>
+      <View style={styles.row}>
+        <Text style={styles.label}>Cost:</Text>
+        <Text style={styles.value}>${item.option.cost}</Text>
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Distance:</Text>
+        <Text style={styles.value}>{item.option.distance} miles</Text>
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Safety Rating:</Text>
+        <Text style={styles.value}>{item.option.safety.toFixed(0)}</Text>
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Speed Rating:</Text>
+        <Text style={styles.value}>{item.option.speedRating}</Text>
+      </View>
+      <View style={styles.row}>
+        <Text style={styles.label}>Estimated Time:</Text>
+        <Text style={styles.value}>{item.option.time} min</Text>
+      </View>
     </View>
   );
+  
 
   const fetchAddressSuggestions = async (query, setSuggestions) => {
     if (query && (Date.now() - lastRequestTime) >= 500) { // 60 seconds
@@ -412,15 +400,17 @@ function parseRidesData(jsonData) {
     </SafeAreaView>
     </MapView>
     <View style={styles.buttonContainer}>
+    <ActivityIndicator size={'large'} color={'gray'} animating={loading}/>
     <TouchableOpacity
       style={styles.routeButton}
       onPress={async() => {
-        setShowResults(true)
+        setLoading(true);
         const [lyftData, publicTransitData, uberData] = await Promise.all([
             getLyft(fromLat, fromLon, toLat, toLon),
             getGoogle(fromLat, fromLon, toLat, toLon),
             getRidePrice(fromLat, fromLon, toLat, toLon)
         ]);
+        console.log(JSON.stringify(publicTransitData));
         const transportationOptions = parseTransportationOptions(lyftData, uberData, publicTransitData);
         AsyncStorage.getItem('budget').then((budget) => {
           if (budget) {
@@ -429,12 +419,17 @@ function parseRidesData(jsonData) {
                 AsyncStorage.getItem('safety').then((safety) => {
                   if (safety) {
                     SetRankings(rankOptions(parseInt(budget), parseInt(safety), parseInt(speed), transportationOptions));
+                    setLoading(false);
+                    setShowResults(true)
+
                   }
                 });
               }
             });
           }else{
             SetRankings(rankOptions(100, 10, 10, transportationOptions));
+            setLoading(false);
+            setShowResults(true)
           }
         });
               }}
@@ -520,6 +515,30 @@ style={styles.suggestionsList}
 };
 
 const styles = StyleSheet.create({
+  item: {
+    backgroundColor: '#D3D3D3',
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 7,
+    borderRadius: 10,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  value: {
+    fontSize: 16,
+  },
   container: {
     flex: 1,
     padding: 20,

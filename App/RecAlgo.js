@@ -64,7 +64,7 @@ export function parseTransportationOptions(lyftData, uberData, publicTransitData
     const averageCost = (priceLow + priceHigh) / 2;
 
     return {
-      type: 'Lyft ' + fare.type,
+      type: 'Lyft: ' + fare.type,
       cost: averageCost,
       safety: 16, // Default safety value as 16 for Lyft options
       distance: parseFloat(lyftData.distance.split(' ')[0]), // Extract distance in miles
@@ -75,7 +75,7 @@ export function parseTransportationOptions(lyftData, uberData, publicTransitData
   transportationOptions.push(...lyftOptions);
     // Parse Uber data and convert estimatedTripTime from seconds to minutes
   const formattedUberData = uberData.map((ride) => ({
-    type: ride.rideType,
+    type: 'Uber: ' + ride.rideType,
     cost: parseFloat(ride.fare.replace('$', '')),
     safety: baseSafetyRatings[ride.rideType] || 16, // Default safety value as 16 for missing safety values
     distance: parseFloat(ride.distanceInMiles), // Use distanceInMiles attribute for distance
@@ -84,8 +84,12 @@ export function parseTransportationOptions(lyftData, uberData, publicTransitData
   }));
   transportationOptions.push(...formattedUberData);
   // Parse Public Transit data
+  let publegs = "";
+  for(let i = 0; i < publicTransitData.legs[0].transitDetails.length; i++){
+    publegs += publicTransitData.legs[0].transitDetails[i].agency + " + ";
+  }
   const publicTransitOption = {
-    type: publicTransitData.legs[0].transitDetails[0].vehicleType,
+    type: publegs.substring(0, publegs.length - 3),
     cost: parseFloat(publicTransitData.fare.replace('$', '').split(' ')[0]),
     safety: 16, // Default safety value as 16 for Public Transit
     distance: parseFloat(publicTransitData.totalDistance.split(' ')[0]), // Extract distance in miles
