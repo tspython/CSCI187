@@ -26,7 +26,7 @@ const LoginScreen = () => {
       }else{
         AsyncStorage.setItem('user', email);
         Alert.alert("Success", "Scuccessfully logged in!");
-        navigation.navigate('Dashboard');
+        navigation.navigate('TravelPreferences');
        } // Navigate to the Dashboard screen
     } catch (error) {
       console.error(error);
