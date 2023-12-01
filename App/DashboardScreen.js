@@ -4,7 +4,6 @@ import MapView, { PROVIDER_DEFAULT, Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import {rankOptions, parseTransportationOptions} from './RecAlgo';
-import { googleMapIsInstalled } from 'react-native-maps/lib/decorateMapComponent';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
@@ -21,7 +20,6 @@ const Dashboard = () => {
   const [showToModal, setShowToModal] = useState(false);
   const [lastRequestTime, setLastRequestTime] = useState(0);
   const [showResults, setShowResults] = useState(false);
-  const [uber, setUber] = useState("");
   const [rankings ,SetRankings] = useState({});
   const [mapRegion, setMapRegion] = useState({
     latitude: 37.78825,
@@ -84,29 +82,7 @@ const Dashboard = () => {
       });
     }
   }, [fromLat, fromLon, toLat, toLon]);
-  function displayUberData(){
-    if (!uber) {
-      return <Text>No Uber data</Text>;
-    }
-    let dataArray = [];
-
-    try {
-      // Parse the JSON-like text into an array of objects
-      dataArray = JSON.parse(uber);
-    } catch (error) {
-      console.error('Error parsing Uber data:', error);
-    }
-
-    return (
-      <SafeAreaView style={styles.container}>
-        {dataArray.map((ride, index) => (
-          <Text key={index}>
-            {ride.rideType}: Estimated Time: {(ride.estimatedTripTime/60).toFixed(0)}min, Fare: {ride.fare}
-          </Text>
-        ))}
-      </SafeAreaView>
-    );
-  }
+  
   async function displayRanking() {
    if (!rankings) {
       return <Text>no rankings</Text>;
@@ -116,8 +92,7 @@ const Dashboard = () => {
     <SafeAreaView style={styles.container}>
   {rankings && rankings.map((item, index) => {
     // Logging for debugging
-    console.log('item.option:', item.option);
-    console.log('item.totalDifference:', item.totalDifference);
+    
 
     // Assuming item.option and item.totalDifference are correctly structured
     const { type, cost, safety, distance, time } = item.option;
@@ -269,7 +244,6 @@ function getGoogle(originLatitude, originLongitude, destinationLatitude, destina
   return fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${originLatitude},${originLongitude}&destination=${destinationLatitude},${destinationLongitude}&mode=transit&key=AIzaSyDx-gVA7mH2jyLznELffrzD-me4mVkJZHA`, requestOptions)
     .then(response => response.json())
     .then(result => {
-      console.log(result)
       return parsePublicTravelData(result);
     })
     .catch(error => console.log('error', error));
@@ -370,11 +344,20 @@ function parseRidesData(jsonData) {
     return fetch("https://m.uber.com/go/graphql", requestOptions)
       .then(response => response.json())
       .then(result => {
-        console.log(result)
         return parseRidesData(result);
       })
       .catch(error => console.log('error', error));
   }
+  const Item = ({ item }) => (
+    <View style={styles.item}>
+      <Text style={styles.title}>{item.option.type}</Text>
+      <Text>Cost: ${item.option.cost}</Text>
+      <Text>Distance: {item.option.distance} miles</Text>
+      <Text>Safety Rating: {item.option.safety}</Text>
+      <Text>Speed Rating: {item.option.speedRating}</Text>
+      <Text>Estimated Time: {item.option.time} min</Text>
+    </View>
+  );
 
   const fetchAddressSuggestions = async (query, setSuggestions) => {
     if (query && (Date.now() - lastRequestTime) >= 500) { // 60 seconds
@@ -434,7 +417,11 @@ function parseRidesData(jsonData) {
     <SafeAreaView style={styles.container}>
       <Modal presentationStyle='pageSheet' onRequestClose={()=> setShowResults(false)} visible={showResults}>
        <SafeAreaView style={styles.container}>
-         {displayRanking()}
+       <FlatList
+      data={rankings}
+      renderItem={({ item }) => <Item item={item} />}
+      keyExtractor={item => item.type}
+    />
        </SafeAreaView>
       </Modal>
 
@@ -449,17 +436,15 @@ function parseRidesData(jsonData) {
     <TouchableOpacity
       style={styles.routeButton}
       onPress={async() => {
-         getLyft(fromLat, fromLon, toLat, toLon).then((result) => {
-           console.log(result);
-         })
-        getGoogle(fromLat, fromLon, toLat, toLon).then((result) => {
-          console.log(JSON.stringify(result));
-        })
-         getRidePrice(fromLat, fromLon, toLat, toLon).then((result) => {
-           console.log(result);
-           setUber(JSON.stringify(result));
-        })
         setShowResults(true)
+        const [lyftData, publicTransitData, uberData] = await Promise.all([
+            getLyft(fromLat, fromLon, toLat, toLon),
+            getGoogle(fromLat, fromLon, toLat, toLon),
+            getRidePrice(fromLat, fromLon, toLat, toLon)
+        ]);
+        const transportationOptions = parseTransportationOptions(lyftData, uberData, publicTransitData);
+        console.log(rankOptions(budget, safety, speed, transportationOptions))
+        SetRankings(rankOptions(budget, safety, speed, transportationOptions));
       }}
     >
       <Text style={styles.buttonText}>Search Routes</Text>
@@ -536,41 +521,7 @@ style={styles.suggestionsList}
         {/* Implement a similar Modal for "To" field */}
       </View>
 
-      <MapView
-        provider={PROVIDER_DEFAULT}
-        style={styles.map}
-        region={mapRegion}
-      >
-        {fromLat && fromLon && (
-          <Marker
-            coordinate={{
-              latitude: fromLat,
-              longitude: fromLon
-            }}
-            title={"From Location"}
-          />
-        )}
-        {toLat && toLon && (
-          <Marker
-            coordinate={{ 
-              latitude: toLat, 
-              longitude: toLon 
-            }}
-            title={"To Location"}
-          />
-        )}
-         {fromLat && fromLon && toLat && toLon && (
-          <Polyline
-            coordinates={[
-              { latitude: fromLat, longitude: fromLon },
-              { latitude: toLat, longitude: toLon }
-            ]}
-            strokeColor="#000" // fallback for when `strokeColors` is not supported by the map-provider
-            strokeColors={['#4285F4']}
-            strokeWidth={6}
-          />
-        )}
-      </MapView>
+      
 
 <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -581,7 +532,6 @@ style={styles.suggestionsList}
                 getGoogle(fromLat, fromLon, toLat, toLon),
                 getRidePrice(fromLat, fromLon, toLat, toLon)
               ]);
-            console.log(uberData)
             const transportationOptions = parseTransportationOptions(lyftData, uberData, publicTransitData);
             console.log(transportationOptions)
             SetRankings(rankOptions(budget, safety, speed, transportationOptions));
@@ -591,8 +541,7 @@ style={styles.suggestionsList}
           <Text style={styles.buttonText}>Search Routes</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
-  );
+    </View>  );
 };
 
 const styles = StyleSheet.create({

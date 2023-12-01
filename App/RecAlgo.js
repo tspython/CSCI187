@@ -58,7 +58,21 @@ function adjustSafety(baseSafety, distance, time) {
 
 export function parseTransportationOptions(lyftData, uberData, publicTransitData) {
   const transportationOptions = [];
+  const lyftOptions = lyftData.fares.map((fare) => {
+    const priceLow = parseFloat(fare.price.split('-')[0].replace('$', '').trim());
+    const priceHigh = parseFloat(fare.price.split('-')[1].replace('$', '').trim());
+    const averageCost = (priceLow + priceHigh) / 2;
 
+    return {
+      type: fare.type,
+      cost: averageCost,
+      safety: 16, // Default safety value as 16 for Lyft options
+      distance: parseFloat(lyftData.distance.split(' ')[0]), // Extract distance in miles
+      time: parseInt(lyftData.estimatedTime.split(' ')[0]), // Extract minutes from estimatedTime
+      speed: 0, // Initial speed value set to 0
+    };
+  });
+  transportationOptions.push(...lyftOptions);
     // Parse Uber data and convert estimatedTripTime from seconds to minutes
   const formattedUberData = uberData.map((ride) => ({
     type: ride.rideType,
