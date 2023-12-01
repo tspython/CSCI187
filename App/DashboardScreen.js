@@ -3,7 +3,6 @@ import { View, StyleSheet, TouchableOpacity, Text, Modal, FlatList, TextInput } 
 import MapView, { PROVIDER_DEFAULT, Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
-import { Parser } from 'htmlparser2';
 
 const Dashboard = () => {
   const [from, setFrom] = useState('');
@@ -21,6 +20,30 @@ const Dashboard = () => {
   const [uber, setUber] = useState("");
 
 
+  function displayUberData(){
+    if (!uber) {
+      return <Text>No Uber data</Text>;
+    }
+    let dataArray = [];
+  
+    try {
+      // Parse the JSON-like text into an array of objects
+      dataArray = JSON.parse(uber);
+    } catch (error) {
+      console.error('Error parsing Uber data:', error);
+    }
+  
+    return (
+      <SafeAreaView style={styles.container}>
+        {dataArray.map((ride, index) => (
+          <Text key={index}>
+            {ride.rideType}: Estimated Time: {(ride.estimatedTripTime/60).toFixed(0)}min, Fare: {ride.fare}
+          </Text>
+        ))}
+      </SafeAreaView>
+    );
+  }
+  
 
   function extractFareAndTimeInfoFromHtml(htmlString) {
     const fareRegex = /<li><b>(.*?)<\/b>: (\$\d+-\d+)<\/li>/g;
@@ -84,6 +107,68 @@ const Dashboard = () => {
       })
       .catch(error => console.log('error', error));
   }
+  function parsePublicTravelData(data) {
+    // Check if data is valid and has routes
+    if (!data || !data.routes || data.routes.length === 0) {
+        return 'No travel routes found in the data.';
+    }
+
+    // Get the first route as the most immediate travel option
+    const firstRoute = data.routes[0];
+
+    // Extract fare information
+    const fare = firstRoute.fare ? `${firstRoute.fare.text} (${firstRoute.fare.currency})` : 'No fare information available';
+
+    // Extract legs of the journey
+    const legs = firstRoute.legs.map(leg => {
+      // For each leg, extract transit details if available
+      const transitDetails = leg.steps
+          .filter(step => step.travel_mode === 'TRANSIT' && step.transit_details)
+          .map(step => {
+              return {
+                  line: step.transit_details.line.name,
+                  agency: step.transit_details.line.agencies.map(agency => agency.name).join(", "),
+                  vehicleType: step.transit_details.line.vehicle.type
+              };
+          });
+
+      return {
+          startAddress: leg.start_address,
+          endAddress: leg.end_address,
+          distance: leg.distance.text,
+          duration: leg.duration.text,
+          transitDetails: transitDetails
+      };
+  });
+
+
+    const totalDistance = firstRoute.legs.reduce((total, leg) => total + leg.distance.value, 0);
+    const totalDuration = firstRoute.legs.reduce((total, leg) => total + leg.duration.value, 0);
+
+    // Convert total distance from meters to kilometers
+    const totalDistanceKm = totalDistance * 0.000621371;
+
+    // Convert total duration from seconds to hours and minutes
+    const minutes = Math.floor(totalDuration / 60).toFixed(0);
+    const totalDurationText = `${minutes} mins`;
+    
+
+    return { fare, legs, totalDistance: `${totalDistanceKm.toFixed(2)} mi`, totalDuration: totalDurationText };
+}
+function getGoogle(originLatitude, originLongitude, destinationLatitude, destinationLongitude){
+  var requestOptions = {
+    method: 'GET',
+    redirect: 'follow'
+  };
+  
+  return fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${originLatitude},${originLongitude}&destination=${destinationLatitude},${destinationLongitude}&mode=transit&key=AIzaSyDx-gVA7mH2jyLznELffrzD-me4mVkJZHA`, requestOptions)
+    .then(response => response.json())
+    .then(result => {
+      console.log(result)
+      return parsePublicTravelData(result);
+    })
+    .catch(error => console.log('error', error));
+}
 
 function parseRidesData(jsonData) {
   // Checking if 'data' and 'products' exist in the JSON
@@ -197,9 +282,8 @@ function parseRidesData(jsonData) {
     <SafeAreaView style={styles.container}>
       <Modal presentationStyle='pageSheet' onRequestClose={()=> setShowResults(false)} visible={showResults}>
        <SafeAreaView style={styles.container}>
-         {displayUberData(uber)}
-         //{displayLyftData(lyft)}
-         //{displayTranistData(transit)}
+         {displayUberData()}
+
        </SafeAreaView>
       </Modal>
 
@@ -320,12 +404,17 @@ function parseRidesData(jsonData) {
         <TouchableOpacity
           style={styles.routeButton}
           onPress={async() => {
-            getLyft(fromLat, fromLon, toLat, toLon).then((result) => {
-              console.log(result);
-              setUber(JSON.stringify(result));
+            // getLyft(fromLat, fromLon, toLat, toLon).then((result) => {
+            //   console.log(result);
+            // })
+            getGoogle(fromLat, fromLon, toLat, toLon).then((result) => {
+              console.log(JSON.stringify(result));
             })
+            // getRidePrice(fromLat, fromLon, toLat, toLon).then((result) => {
+            //   console.log(result);
+            //   setUber(JSON.stringify(result));
+            // })
             setShowResults(true)
-
           }}
         >
           <Text style={styles.buttonText}>Search Routes</Text>
