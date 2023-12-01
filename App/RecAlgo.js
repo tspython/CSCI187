@@ -18,7 +18,7 @@ const baseSafetyRatings = {
   "Caltrain": 18
 };
 
-function rankOptions(cost, safety, speed, transportationData) {
+export function rankOptions(cost, safety, speed, transportationData) {
   const rankedOptions = transportationData.map(option => {
     const safetyDifference = Math.abs(option.safety - safety);
     const costDifference = Math.abs(option.cost - cost);
@@ -56,7 +56,7 @@ function adjustSafety(baseSafety, distance, time) {
   return adjustedSafety;
 }
 
-function parseTransportationOptions(lyftData, uberData, publicTransitData) {
+export function parseTransportationOptions(lyftData, uberData, publicTransitData) {
   const transportationOptions = [];
 
     // Parse Uber data and convert estimatedTripTime from seconds to minutes
@@ -99,4 +99,4 @@ function calculateSpeedRatingBasedOnTime(time, allOptions) {
   return rating;
 }
 
-export default rankOptions;
+export default {rankOptions, parseTransportationOptions};

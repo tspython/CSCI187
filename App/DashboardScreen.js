@@ -3,6 +3,10 @@ import { View, StyleSheet, TouchableOpacity, Text, Modal, FlatList, TextInput } 
 import MapView, { PROVIDER_DEFAULT, Marker, Polyline } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import {rankOptions, parseTransportationOptions} from './RecAlgo';
+import { googleMapIsInstalled } from 'react-native-maps/lib/decorateMapComponent';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const Dashboard = () => {
   const [from, setFrom] = useState('');
@@ -18,19 +22,42 @@ const Dashboard = () => {
   const [lastRequestTime, setLastRequestTime] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [uber, setUber] = useState("");
+  const [rankings ,SetRankings] = useState({});
   const [mapRegion, setMapRegion] = useState({
     latitude: 37.78825,
     longitude: -122.4324,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+    const [budget, setBudget] = useState(30);
+  const [speed, setSpeed] = useState(5);
+  const [safety, setSafety] = useState(10);
+
+  useEffect(() => {
+    AsyncStorage.getItem('budget').then((value) => {
+      if (value) {
+        setBudget(parseInt(value));
+      }
+    });
+    AsyncStorage.getItem('speed').then((value) => {
+      if (value) {
+        setSpeed(parseInt(value));
+      }
+    });
+    AsyncStorage.getItem('safety').then((value) => {
+      if (value) {
+        setSafety(parseInt(value));
+      }
+    });
+  }, []);
+
   useEffect(() => {
     if (fromLat && fromLon && toLat && toLon) {
       console.log('Map region updated');
       // Calculate the midpoint of the two markers
       const midLat = (fromLat + toLat) / 2;
       const midLon = (fromLon + toLon) / 2;
-  
+
       // Update the map region
       setMapRegion({
         latitude: midLat,
@@ -62,14 +89,14 @@ const Dashboard = () => {
       return <Text>No Uber data</Text>;
     }
     let dataArray = [];
-  
+
     try {
       // Parse the JSON-like text into an array of objects
       dataArray = JSON.parse(uber);
     } catch (error) {
       console.error('Error parsing Uber data:', error);
     }
-  
+
     return (
       <SafeAreaView style={styles.container}>
         {dataArray.map((ride, index) => (
@@ -80,7 +107,38 @@ const Dashboard = () => {
       </SafeAreaView>
     );
   }
-  
+  async function displayRanking() {
+   if (!rankings) {
+      return <Text>no rankings</Text>;
+    }
+
+  return (
+    <SafeAreaView style={styles.container}>
+  {rankings && rankings.map((item, index) => {
+    // Logging for debugging
+    console.log('item.option:', item.option);
+    console.log('item.totalDifference:', item.totalDifference);
+
+    // Assuming item.option and item.totalDifference are correctly structured
+    const { type, cost, safety, distance, time } = item.option;
+
+    return (
+      <View key={index} style={styles.optionContainer}>
+        <Text>Type: {type}</Text>
+        <Text>Cost: {cost}</Text>
+        <Text>Safety: {safety}</Text>
+        <Text>Distance: {distance}</Text>
+        <Text>Time: {time}</Text>
+        {/* Add more fields as needed */}
+        <Text>Total Difference: {item.totalDifference}</Text>
+      </View>
+    );
+  })}
+</SafeAreaView>
+  );
+}
+
+
   function extractFareAndTimeInfoFromHtml(htmlString) {
     const fareRegex = /<li><b>(.*?)<\/b>: (\$\d+-\d+)<\/li>/g;
     const timeRegex = /estimated to take around <i>(\d+ mins?)<\/i>/;
@@ -118,7 +176,7 @@ const Dashboard = () => {
     var myHeaders = new Headers();
     myHeaders.append("Accept", "application/json");
     myHeaders.append("Content-Type", "application/json");
-    
+
     var raw = JSON.stringify({
       "pickup": {
         "lat": originLatitude,
@@ -129,14 +187,14 @@ const Dashboard = () => {
         "lon": destinationLongitude
       }
     });
-    
+
     var requestOptions = {
       method: 'POST',
       headers: myHeaders,
       body: raw,
       redirect: 'follow'
     };
-    
+
     return fetch("https://lyftrideestimate.com/api/routes", requestOptions)
       .then(response => response.json())
       .then(result => {
@@ -144,7 +202,7 @@ const Dashboard = () => {
           method: 'GET',
           redirect: 'follow'
         };
-        
+
         return fetch(`https://lyftrideestimate.com/route/${result['slug']}`, requestOptions)
           .then(response => response.text())
           .then(result => {
@@ -198,7 +256,7 @@ const Dashboard = () => {
     // Convert total duration from seconds to hours and minutes
     const minutes = Math.floor(totalDuration / 60).toFixed(0);
     const totalDurationText = `${minutes} mins`;
-    
+
 
     return { fare, legs, totalDistance: `${totalDistanceKm.toFixed(2)} mi`, totalDuration: totalDurationText };
 }
@@ -207,7 +265,7 @@ function getGoogle(originLatitude, originLongitude, destinationLatitude, destina
     method: 'GET',
     redirect: 'follow'
   };
-  
+
   return fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${originLatitude},${originLongitude}&destination=${destinationLatitude},${destinationLongitude}&mode=transit&key=AIzaSyDx-gVA7mH2jyLznELffrzD-me4mVkJZHA`, requestOptions)
     .then(response => response.json())
     .then(result => {
@@ -376,8 +434,7 @@ function parseRidesData(jsonData) {
     <SafeAreaView style={styles.container}>
       <Modal presentationStyle='pageSheet' onRequestClose={()=> setShowResults(false)} visible={showResults}>
        <SafeAreaView style={styles.container}>
-         {displayUberData()}
-
+         {displayRanking()}
        </SafeAreaView>
       </Modal>
 
@@ -476,10 +533,65 @@ style={styles.suggestionsList}
 </SafeAreaView>
 </Modal>
 
-{/* Implement a similar Modal for "To" field */}
-</View>
-  </View>
+        {/* Implement a similar Modal for "To" field */}
+      </View>
 
+      <MapView
+        provider={PROVIDER_DEFAULT}
+        style={styles.map}
+        region={mapRegion}
+      >
+        {fromLat && fromLon && (
+          <Marker
+            coordinate={{
+              latitude: fromLat,
+              longitude: fromLon
+            }}
+            title={"From Location"}
+          />
+        )}
+        {toLat && toLon && (
+          <Marker
+            coordinate={{ 
+              latitude: toLat, 
+              longitude: toLon 
+            }}
+            title={"To Location"}
+          />
+        )}
+         {fromLat && fromLon && toLat && toLon && (
+          <Polyline
+            coordinates={[
+              { latitude: fromLat, longitude: fromLon },
+              { latitude: toLat, longitude: toLon }
+            ]}
+            strokeColor="#000" // fallback for when `strokeColors` is not supported by the map-provider
+            strokeColors={['#4285F4']}
+            strokeWidth={6}
+          />
+        )}
+      </MapView>
+
+<View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.routeButton}
+          onPress={async() => {
+            const [lyftData, publicTransitData, uberData] = await Promise.all([
+                getLyft(fromLat, fromLon, toLat, toLon),
+                getGoogle(fromLat, fromLon, toLat, toLon),
+                getRidePrice(fromLat, fromLon, toLat, toLon)
+              ]);
+            console.log(uberData)
+            const transportationOptions = parseTransportationOptions(lyftData, uberData, publicTransitData);
+            console.log(transportationOptions)
+            SetRankings(rankOptions(budget, safety, speed, transportationOptions));
+            setShowResults(true)
+          }}
+        >
+          <Text style={styles.buttonText}>Search Routes</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
 
