@@ -64,7 +64,7 @@ export function parseTransportationOptions(lyftData, uberData, publicTransitData
     const averageCost = (priceLow + priceHigh) / 2;
 
     return {
-      type: fare.type,
+      type: 'Lyft ' + fare.type,
       cost: averageCost,
       safety: 16, // Default safety value as 16 for Lyft options
       distance: parseFloat(lyftData.distance.split(' ')[0]), // Extract distance in miles
