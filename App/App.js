@@ -47,7 +47,7 @@ const TabNavigator = () => {
     <Tab.Navigator
       initialRouteName="DashboardStack"
       screenOptions={{
-        tabBarActiveTintColor: '#e91e63',
+        tabBarActiveTintColor: 'black',
         headerShown: false,
       }}
     >

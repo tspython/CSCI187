@@ -338,6 +338,41 @@ function parseRidesData(jsonData) {
   };
 
   return (
+    <View style={{flex: 1}}>
+    <MapView
+    provider={PROVIDER_DEFAULT}
+    style={styles.map}
+    region={mapRegion}
+  >
+    {fromLat && fromLon && (
+      <Marker
+        coordinate={{
+          latitude: fromLat,
+          longitude: fromLon
+        }}
+        title={"From Location"}
+      />
+    )}
+    {toLat && toLon && (
+      <Marker
+        coordinate={{ 
+          latitude: toLat, 
+          longitude: toLon 
+        }}
+        title={"To Location"}
+      />
+    )}
+     {fromLat && fromLon && toLat && toLon && (
+      <Polyline
+        coordinates={[
+          { latitude: fromLat, longitude: fromLon },
+          { latitude: toLat, longitude: toLon }
+        ]}
+        strokeColor="#000" // fallback for when `strokeColors` is not supported by the map-provider
+        strokeColors={['#4285F4']}
+        strokeWidth={6}
+      />
+    )}
     <SafeAreaView style={styles.container}>
       <Modal presentationStyle='pageSheet' onRequestClose={()=> setShowResults(false)} visible={showResults}>
        <SafeAreaView style={styles.container}>
@@ -346,67 +381,66 @@ function parseRidesData(jsonData) {
        </SafeAreaView>
       </Modal>
 
-      <View style={styles.searchContainer}>
+     
 
-        { !showFromModal &&
-        <TouchableOpacity onPress={() => setShowFromModal(true)} style={styles.inputTouchable} visible={showFromModal}>
-          <Text style={styles.inputText} visible={!showFromModal}>{from || 'From'}</Text>
-        </TouchableOpacity>
-        }
-        { !showToModal &&
-        <TouchableOpacity onPress={() => setShowToModal(true)} style={styles.inputTouchable} visible={showToModal}>
-          <Text style={styles.inputText} visible={!showFromModal}>{to || 'To'}</Text>
-        </TouchableOpacity>
-        }
+     
 
-        <Modal
-          visible={showFromModal}
-          onRequestClose={() => setShowFromModal(false)}
-          transparent={true}
-          
-        >
-          <SafeAreaView style={styles.modalContainer}>
-            <TextInput
-              style={styles.modalInput}
-              onChangeText={(text) => {
-                setFrom(text);
-                fetchAddressSuggestions(text, setFromSuggestions);
-              }}
-              value={from}
-              placeholder="From"
-            />
-            <FlatList
-              data={fromSuggestions}
-              keyExtractor={(item) => item.place_id.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity onPress={() => handleSelectSuggestion(item, setFrom, setShowFromModal, setFromLat, setFromLon)}>
-                  <Text style={styles.suggestionItem}>{item.display_name}</Text>
-                </TouchableOpacity>
-              )}
-              style={styles.suggestionsList}
-            />
-          </SafeAreaView>
-        </Modal>
-        <Modal
-  visible={showToModal}
-  onRequestClose={() => setShowToModal(false)}
+
+    </SafeAreaView>
+    </MapView>
+    <View style={styles.buttonContainer}>
+    <TouchableOpacity
+      style={styles.routeButton}
+      onPress={async() => {
+         getLyft(fromLat, fromLon, toLat, toLon).then((result) => {
+           console.log(result);
+         })
+        getGoogle(fromLat, fromLon, toLat, toLon).then((result) => {
+          console.log(JSON.stringify(result));
+        })
+         getRidePrice(fromLat, fromLon, toLat, toLon).then((result) => {
+           console.log(result);
+           setUber(JSON.stringify(result));
+        })
+        setShowResults(true)
+      }}
+    >
+      <Text style={styles.buttonText}>Search Routes</Text>
+    </TouchableOpacity>
+  </View>
+  <View style={styles.searchContainer}>
+
+       
+<TouchableOpacity onPress={() => setShowFromModal(true)} style={styles.inputTouchable} visible={showFromModal}>
+  <Text style={styles.inputText} visible={!showFromModal}>{from || 'From'}</Text>
+</TouchableOpacity>
+
+<TouchableOpacity onPress={() => setShowToModal(true)} style={styles.inputTouchable} visible={showToModal}>
+  <Text style={styles.inputText} visible={!showToModal}>{to || 'To'}</Text>
+</TouchableOpacity>
+
+
+<Modal
+  visible={showFromModal}
+  onRequestClose={() => setShowFromModal(false)}
   transparent={true}
+  
 >
   <SafeAreaView style={styles.modalContainer}>
     <TextInput
       style={styles.modalInput}
       onChangeText={(text) => {
-        setTo(text);
-        fetchAddressSuggestions(text, setToSuggestions);
+        setFrom(text);
+        fetchAddressSuggestions(text, setFromSuggestions);
       }}
-      value={to}
-      placeholder="To"
+      value={from}
+      placeholder="From"
     />
     <FlatList
-      data={toSuggestions}
+      data={fromSuggestions}
       keyExtractor={(item) => item.place_id.toString()}
       renderItem={({ item }) => (
-        <TouchableOpacity onPress={() => handleSelectSuggestion(item, setTo, setShowToModal, setToLat, setToLon)}>
+        <TouchableOpacity onPress={() => handleSelectSuggestion(item, setFrom, setShowFromModal, setFromLat, setFromLon)}>
           <Text style={styles.suggestionItem}>{item.display_name}</Text>
         </TouchableOpacity>
       )}
@@ -414,67 +448,38 @@ function parseRidesData(jsonData) {
     />
   </SafeAreaView>
 </Modal>
+<Modal
+visible={showToModal}
+onRequestClose={() => setShowToModal(false)}
+transparent={true}
+>
+<SafeAreaView style={styles.modalContainer}>
+<TextInput
+style={styles.modalInput}
+onChangeText={(text) => {
+setTo(text);
+fetchAddressSuggestions(text, setToSuggestions);
+}}
+value={to}
+placeholder="To"
+/>
+<FlatList
+data={toSuggestions}
+keyExtractor={(item) => item.place_id.toString()}
+renderItem={({ item }) => (
+<TouchableOpacity onPress={() => handleSelectSuggestion(item, setTo, setShowToModal, setToLat, setToLon)}>
+  <Text style={styles.suggestionItem}>{item.display_name}</Text>
+</TouchableOpacity>
+)}
+style={styles.suggestionsList}
+/>
+</SafeAreaView>
+</Modal>
 
-        {/* Implement a similar Modal for "To" field */}
-      </View>
+{/* Implement a similar Modal for "To" field */}
+</View>
+  </View>
 
-      <MapView
-        provider={PROVIDER_DEFAULT}
-        style={styles.map}
-        region={mapRegion}
-      >
-        {fromLat && fromLon && (
-          <Marker
-            coordinate={{
-              latitude: fromLat,
-              longitude: fromLon
-            }}
-            title={"From Location"}
-          />
-        )}
-        {toLat && toLon && (
-          <Marker
-            coordinate={{ 
-              latitude: toLat, 
-              longitude: toLon 
-            }}
-            title={"To Location"}
-          />
-        )}
-         {fromLat && fromLon && toLat && toLon && (
-          <Polyline
-            coordinates={[
-              { latitude: fromLat, longitude: fromLon },
-              { latitude: toLat, longitude: toLon }
-            ]}
-            strokeColor="#000" // fallback for when `strokeColors` is not supported by the map-provider
-            strokeColors={['#4285F4']}
-            strokeWidth={6}
-          />
-        )}
-      </MapView>
-
-<View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.routeButton}
-          onPress={async() => {
-             getLyft(fromLat, fromLon, toLat, toLon).then((result) => {
-               console.log(result);
-             })
-            getGoogle(fromLat, fromLon, toLat, toLon).then((result) => {
-              console.log(JSON.stringify(result));
-            })
-             getRidePrice(fromLat, fromLon, toLat, toLon).then((result) => {
-               console.log(result);
-               setUber(JSON.stringify(result));
-            })
-            setShowResults(true)
-          }}
-        >
-          <Text style={styles.buttonText}>Search Routes</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
   );
 };
 
@@ -482,25 +487,40 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    pointerEvents: 'box-none', // This allows touches to pass through
+
   },
   searchContainer: {
+    position: 'absolute',
+    top: 0, // Increased from 0 to 20 to lower the boxes
+    left: 0,
+    right: 0,
     flexDirection: 'column',
-    marginBottom: 20,
+    paddingTop: 60,
+    padding: 10,
   },
+  
   inputTouchable: {
     padding: 10,
     borderWidth: 1,
     borderColor: '#ccc',
+    backgroundColor: 'white', // Set background color to white
     marginBottom: 10,
+    borderRadius: 7,
+    // No need for alignItems and justifyContent here
   },
+
   inputText: {
-    // Styles for the "From" and "To" placeholder text
+    color: 'black',
+    fontSize: 16,
+    textAlign: 'left', // Align text to the left
+    // Add additional styling as needed
   },
   modalContainer: {
-    marginTop: 70,
-    marginHorizontal: 70,
+    marginTop: 60,
+    marginHorizontal: 10,
     backgroundColor: 'white',
-    borderRadius: 20,
+    borderRadius: 7,
     padding: 10,
     shadowColor: "#000",
     shadowOffset: {
@@ -515,50 +535,67 @@ const styles = StyleSheet.create({
     height: 40,
     borderWidth: 1,
     padding: 10,
-    borderColor: 'gray',
+    borderColor: 'black',
+    foregroundColor: 'black',
     borderRadius: 5,
     marginBottom: 10,
+    pointerEvents: 'box-none', // This allows touches to pass through
+
   },
   suggestionsList: {
     // Styles for the suggestions list
+    pointerEvents: 'box-none', // This allows touches to pass through
+
   },
   suggestionItem: {
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     // Adjust additional styles as needed
+    pointerEvents: 'box-none', // This allows touches to pass through
+
   },
   map: {
     flex: 1,
-    marginTop: 10,
-    borderRadius: 10,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
+    position: 'absolute',
+    bottom: 0, // Place at the bottom
+    left: 0,
+    right: 0,
+    justifyContent: 'center',
+    padding: 20,
   },
-  routeButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
+ 
+
   logoutButton: {
     backgroundColor: '#FF3B30',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
+    pointerEvents: 'box-none', // This allows touches to pass through
+
   },
+  routeButton: {
+    backgroundColor: 'black', 
+    padding: 15,
+    alignItems: 'center', // Align items horizontally in the center
+    justifyContent: 'center', // Align items vertically in the center
+    borderRadius: 7,
+    height: 50, // Example height, adjust as necessary
+  },
+
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: 'center', // Ensure text is centered
   },
   title: {
     fontweight: 'bold',
     fontsSize: 24,
     marginBottom: 10,
+    pointerEvents: 'box-none', // This allows touches to pass through
+
   }
 });
 export default Dashboard;
